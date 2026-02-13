@@ -26,11 +26,14 @@ from source import *
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
-st.set_page_config(page_title="QuLab — Stock Screening: Rules vs Probabilistic Scoring", layout="wide")
+st.set_page_config(
+    page_title="QuLab — Stock Screening: Rules vs Probabilistic Scoring", layout="wide")
 
 # -----------------------------
 # Session State
 # -----------------------------
+
+
 def _init_state():
     defaults = {
         "page": "1. Overview",
@@ -56,8 +59,9 @@ def _init_state():
         "coefficients": None,
         "metrics_df": None,
         # Learning/UX controls
-        "bucket_pct": 30,            # target construction: top/bottom % (if supported by source)
-        "confidence_threshold": 0.60, # act on ML Buy only above this probability
+        # target construction: top/bottom % (if supported by source)
+        "bucket_pct": 30,
+        "confidence_threshold": 0.60,  # act on ML Buy only above this probability
         "show_diagnostics": False,   # ROC, confusion matrices, etc.
         "show_math": False,          # formulas
         "assumptions_ack": False,    # integrity/assumptions acknowledgement
@@ -66,18 +70,23 @@ def _init_state():
         if k not in st.session_state:
             st.session_state[k] = v
 
+
 _init_state()
 
 # -----------------------------
 # Helpers (Pedagogy-first UI)
 # -----------------------------
+
+
 def info_card(title: str, body: str):
     with st.container(border=True):
         st.markdown(f"### {title}")
         st.markdown(body)
 
+
 def why_this_matters(text: str):
     st.info(f"**Why this matters:** {text}")
+
 
 def checkpoint(question: str, options: list, correct_index: int, explanation: str, key: str):
     st.markdown("#### Checkpoint")
@@ -90,10 +99,12 @@ def checkpoint(question: str, options: list, correct_index: int, explanation: st
             st.warning("⚠️ Not quite.")
         st.markdown(explanation)
 
+
 def require_step(condition: bool, message: str):
     if not condition:
         st.warning(message)
         st.stop()
+
 
 def short_assumptions_panel():
     st.sidebar.markdown("### Assumptions & Integrity")
@@ -105,7 +116,8 @@ def short_assumptions_panel():
         "Coefficients describe **associations**, not causality.",
     ]
     for it in items:
-        st.sidebar.write(f"• {it}")
+        st.sidebar.write(f"\n• {it}")
+
 
 def metric_hierarchy_box():
     with st.container(border=True):
@@ -117,6 +129,7 @@ def metric_hierarchy_box():
             "4) **Accuracy/F1:** Secondary summaries; don’t confuse them with alpha."
         )
 
+
 def decision_translation_lines():
     st.markdown(
         "- **If Spread increases:** consider the screen as a first-pass shortlist (still requires analyst review).\n"
@@ -125,13 +138,16 @@ def decision_translation_lines():
         "- **If Sell recall is low:** risk flags may be missed."
     )
 
+
 def format_signal_counts(df, col):
     vc = df[col].value_counts(dropna=False)
     out = pd.DataFrame({"Signal": vc.index.astype(str), "Count": vc.values})
     return out
 
+
 def safe_mean(x):
     return float(np.nanmean(x)) if x is not None and len(x) else np.nan
+
 
 # -----------------------------
 # Sidebar
@@ -151,7 +167,8 @@ page_options = [
 ]
 if st.session_state.page not in page_options:
     st.session_state.page = page_options[0]
-st.session_state.page = st.sidebar.selectbox("Go to page", page_options, index=page_options.index(st.session_state.page))
+st.session_state.page = st.sidebar.selectbox(
+    "Go to page", page_options, index=page_options.index(st.session_state.page))
 
 st.sidebar.divider()
 
@@ -159,7 +176,8 @@ st.sidebar.title("Learning Mode")
 st.session_state.mode = st.sidebar.radio(
     "Choose your time-to-value path",
     ["3-minute insight", "10-minute understanding", "20-minute mastery"],
-    index=["3-minute insight", "10-minute understanding", "20-minute mastery"].index(st.session_state.mode),
+    index=["3-minute insight", "10-minute understanding",
+           "20-minute mastery"].index(st.session_state.mode),
     help="A faster path shows only the most decision-relevant outputs. Longer paths add diagnostics and deeper intuition builders."
 )
 
@@ -203,8 +221,8 @@ if st.session_state.page == "1. Overview":
     info_card(
         "What you’ll learn",
         "You’ll compare two ways to build a stock shortlist:\n\n"
-        "• **Classic rules (GARP):** transparent thresholds you can explain in 30 seconds.\n"
-        "• **Probabilistic scoring:** a confidence-weighted signal that can reduce cliff effects.\n\n"
+        "\n• **Classic rules (GARP):** transparent thresholds you can explain in 30 seconds.\n"
+        "\n• **Probabilistic scoring:** a confidence-weighted signal that can reduce cliff effects.\n\n"
         "You’ll judge them by **economic usefulness** (Spread, IC), not just accuracy."
     )
 
@@ -249,7 +267,8 @@ elif st.session_state.page == "2. Load Data":
     st.markdown(
         "This step gives you a consistent dataset so you can focus on **decision logic** rather than data plumbing."
     )
-    why_this_matters("If your inputs are inconsistent or missing, your screen becomes a hidden sector or quality bet.")
+    why_this_matters(
+        "If your inputs are inconsistent or missing, your screen becomes a hidden sector or quality bet.")
 
     with st.container(border=True):
         st.markdown("#### Integrity check: No peeking")
@@ -263,20 +282,25 @@ elif st.session_state.page == "2. Load Data":
         )
 
     if st.button("Load sample S&P 500 fundamentals (for learning)"):
-        require_step(st.session_state.assumptions_ack, "Please acknowledge the integrity check before proceeding.")
+        require_step(st.session_state.assumptions_ack,
+                     "Please acknowledge the integrity check before proceeding.")
         with st.spinner("Loading data..."):
             current_date = pd.to_datetime("2023-12-31")
             past_date = current_date - pd.DateOffset(years=2)
             sp500_tickers = fetch_sp500_tickers()
-            st.session_state.df_raw = fetch_financial_data(sp500_tickers, start_date=past_date, end_date=current_date)
+            st.session_state.df_raw = fetch_financial_data(
+                sp500_tickers, start_date=past_date, end_date=current_date)
 
     if st.session_state.df_raw is not None and not st.session_state.df_raw.empty:
-        st.success(f"Loaded {st.session_state.df_raw.shape[0]} stocks with {st.session_state.df_raw.shape[1]} columns.")
+        st.success(
+            f"Loaded {st.session_state.df_raw.shape[0]} stocks with {st.session_state.df_raw.shape[1]} columns.")
         with st.expander("Preview the dataset (first 10 rows)"):
-            st.dataframe(st.session_state.df_raw.head(10), use_container_width=True)
+            st.dataframe(st.session_state.df_raw.head(
+                10), use_container_width=True)
 
         if st.session_state.show_math:
-            st.markdown("**Optional formula:** 12-month forward return (teaching target)")
+            st.markdown(
+                "**Optional formula:** 12-month forward return (teaching target)")
             st.markdown(r"$$ r^{fwd} = \frac{P_{t+12} - P_t}{P_t} $$")
     else:
         st.info("Click the button above to load the dataset.")
@@ -286,7 +310,8 @@ elif st.session_state.page == "2. Load Data":
 # -----------------------------
 elif st.session_state.page == "3. Make Inputs Investable":
     st.header("Make the inputs investable")
-    require_step(st.session_state.df_raw is not None, "Please complete **Load Data** first.")
+    require_step(st.session_state.df_raw is not None,
+                 "Please complete **Load Data** first.")
 
     st.markdown(
         "Before trusting any screen, you need to ensure ratios aren’t misleading due to missing data, outliers, "
@@ -299,19 +324,22 @@ elif st.session_state.page == "3. Make Inputs Investable":
 
     with st.expander("What we do (plain English)", expanded=True):
         st.markdown(
-            "• **Peer-based fill:** If a metric is missing, use the **sector median** (peer anchor).\n"
-            "• **Cap extremes:** Limit outliers so a few broken ratios don’t dominate.\n"
-            "• **Create investable composites:** simple features like earnings yield, quality, and leverage-adjusted quality."
+            "\n• **Peer-based fill:** If a metric is missing, use the **sector median** (peer anchor).\n"
+            "\n• **Cap extremes:** Limit outliers so a few broken ratios don’t dominate.\n"
+            "\n• **Create investable composites:** simple features like earnings yield, quality, and leverage-adjusted quality."
         )
 
     if st.button("Create cleaned inputs + Buy/Hold/Sell buckets"):
         with st.spinner("Preparing investable inputs..."):
-            df_clean = clean_and_engineer_features(st.session_state.df_raw.copy())
+            df_clean = clean_and_engineer_features(
+                st.session_state.df_raw.copy())
             # If your source supports bucket sizing, use it; otherwise fall back to existing behavior.
             try:
-                st.session_state.df_final = create_target_variable(df_clean.copy(), bucket_pct=st.session_state.bucket_pct)
+                st.session_state.df_final = create_target_variable(
+                    df_clean.copy(), bucket_pct=st.session_state.bucket_pct)
             except TypeError:
-                st.session_state.df_final = create_target_variable(df_clean.copy())
+                st.session_state.df_final = create_target_variable(
+                    df_clean.copy())
 
     if st.session_state.df_final is not None and not st.session_state.df_final.empty:
         st.success("Inputs are ready.")
@@ -319,13 +347,15 @@ elif st.session_state.page == "3. Make Inputs Investable":
         with colA:
             st.markdown("#### Bucket distribution (Buy/Hold/Sell)")
             st.dataframe(
-                st.session_state.df_final["target"].value_counts().rename_axis("Bucket").reset_index(name="Count"),
+                st.session_state.df_final["target"].value_counts(
+                ).rename_axis("Bucket").reset_index(name="Count"),
                 use_container_width=True
             )
         with colB:
             st.markdown("#### Missingness quick check (top 10 columns)")
             miss = st.session_state.df_raw.isna().mean().sort_values(ascending=False).head(10)
-            st.dataframe(miss.rename("Missing %").reset_index(name="Column"), use_container_width=True)
+            st.dataframe(miss.rename("Missing %").reset_index(
+                name="Column"), use_container_width=True)
 
         if st.session_state.mode != "3-minute insight":
             # EDA as optional / lower priority
@@ -340,16 +370,20 @@ elif st.session_state.page == "3. Make Inputs Investable":
                 )
                 if not numeric_cols_for_corr.empty:
                     fig, ax = plt.subplots(figsize=(10, 8))
-                    sns.heatmap(numeric_cols_for_corr.corr(), annot=False, cmap="coolwarm", ax=ax)
+                    sns.heatmap(numeric_cols_for_corr.corr(),
+                                annot=False, cmap="coolwarm", ax=ax)
                     ax.set_title("Correlation Heatmap (Redundancy Map)")
                     st.pyplot(fig)
                     plt.close(fig)
-                st.markdown("**Interpretation:** clusters suggest metrics telling the same story (risk of double counting).")
+                st.markdown(
+                    "**Interpretation:** clusters suggest metrics telling the same story (risk of double counting).")
 
             with st.expander("How do Buy vs Sell differ on key features?", expanded=False):
                 # Prefer consistent “investor-relevant” features if present
-                preferred = ["earnings_yield", "ROE", "DE_ratio", "profit_margin", "revenue_growth"]
-                available = [c for c in preferred if c in st.session_state.df_final.columns]
+                preferred = ["earnings_yield", "ROE", "DE_ratio",
+                             "profit_margin", "revenue_growth"]
+                available = [
+                    c for c in preferred if c in st.session_state.df_final.columns]
                 if not available:
                     available = (
                         st.session_state.df_final
@@ -358,15 +392,18 @@ elif st.session_state.page == "3. Make Inputs Investable":
                         .columns.tolist()[:4]
                     )
                 dfp = st.session_state.df_final.copy()
-                fig, axes = plt.subplots(1, len(available), figsize=(5 * len(available), 4))
+                fig, axes = plt.subplots(
+                    1, len(available), figsize=(5 * len(available), 4))
                 if len(available) == 1:
                     axes = [axes]
                 for i, feature in enumerate(available):
-                    sns.histplot(data=dfp, x=feature, hue="target", kde=True, multiple="stack", ax=axes[i])
+                    sns.histplot(data=dfp, x=feature, hue="target",
+                                 kde=True, multiple="stack", ax=axes[i])
                     axes[i].set_title(feature)
                 st.pyplot(fig)
                 plt.close(fig)
-                st.markdown("**Interpretation:** heavy overlap suggests weak separation from fundamentals alone in this sample.")
+                st.markdown(
+                    "**Interpretation:** heavy overlap suggests weak separation from fundamentals alone in this sample.")
 
         checkpoint(
             "A high accuracy score always means the screen will generate alpha.",
@@ -386,7 +423,8 @@ elif st.session_state.page == "3. Make Inputs Investable":
 # -----------------------------
 elif st.session_state.page == "4. Run Classic GARP Rules":
     st.header("Run the classic GARP screen (committee-friendly rules)")
-    require_step(st.session_state.df_final is not None, "Please complete **Make Inputs Investable** first.")
+    require_step(st.session_state.df_final is not None,
+                 "Please complete **Make Inputs Investable** first.")
 
     st.markdown(
         "These are simple thresholds you can explain quickly (e.g., valuation, quality, leverage, growth). "
@@ -399,16 +437,17 @@ elif st.session_state.page == "4. Run Classic GARP Rules":
     with st.expander("Illustrative rules (plain English)", expanded=True):
         st.markdown(
             "Example ‘Buy’ logic might require:\n"
-            "• Reasonable valuation\n"
-            "• Solid profitability/ROE\n"
-            "• Controlled leverage\n"
-            "• Positive growth and margins\n\n"
+            "\n• Reasonable valuation\n"
+            "\n• Solid profitability/ROE\n"
+            "\n• Controlled leverage\n"
+            "\n• Positive growth and margins\n\n"
             "This lab uses an illustrative GARP template; firms often tune thresholds by sector and market regime."
         )
 
     if st.button("Apply GARP rules"):
         with st.spinner("Applying rules..."):
-            st.session_state.df_screened_rules = rules_based_screen(st.session_state.df_final.copy())
+            st.session_state.df_screened_rules = rules_based_screen(
+                st.session_state.df_final.copy())
 
     if st.session_state.df_screened_rules is not None and not st.session_state.df_screened_rules.empty:
         st.success("Rules applied.")
@@ -416,15 +455,18 @@ elif st.session_state.page == "4. Run Classic GARP Rules":
         c1, c2 = st.columns([1, 2])
         with c1:
             st.markdown("#### Signal counts")
-            st.dataframe(format_signal_counts(st.session_state.df_screened_rules, "signal_rules"), use_container_width=True)
+            st.dataframe(format_signal_counts(
+                st.session_state.df_screened_rules, "signal_rules"), use_container_width=True)
         with c2:
             st.markdown("#### Boundary cases (near common cutoffs)")
             df = st.session_state.df_screened_rules.copy()
             # Show near P/E = 20 if available
             if "PE_ratio" in df.columns:
-                near = df.loc[df["PE_ratio"].between(18, 22), ["ticker", "PE_ratio", "signal_rules", "target"]].sort_values("PE_ratio")
+                near = df.loc[df["PE_ratio"].between(
+                    18, 22), ["ticker", "PE_ratio", "signal_rules", "target"]].sort_values("PE_ratio")
                 st.dataframe(near.head(15), use_container_width=True)
-                st.caption("These highlight cliff effects: tiny differences can flip labels.")
+                st.caption(
+                    "These highlight cliff effects: tiny differences can flip labels.")
             else:
                 st.caption("P/E ratio not available in this dataset snapshot.")
 
@@ -433,11 +475,13 @@ elif st.session_state.page == "4. Run Classic GARP Rules":
             for c in ["PE_ratio", "ROE", "DE_ratio", "revenue_growth", "profit_margin"]:
                 if c in st.session_state.df_screened_rules.columns:
                     cols.insert(-2, c)
-            st.dataframe(st.session_state.df_screened_rules[cols].head(15), use_container_width=True)
+            st.dataframe(st.session_state.df_screened_rules[cols].head(
+                15), use_container_width=True)
 
         checkpoint(
             "If most names end up as ‘Hold’, what is the most likely issue?",
-            ["The market has no opportunities", "Thresholds may be too strict for this universe", "Rules are always wrong"],
+            ["The market has no opportunities",
+                "Thresholds may be too strict for this universe", "Rules are always wrong"],
             correct_index=1,
             explanation=(
                 "Often the screen is **over-restrictive** or poorly tuned to the universe/sector mix. "
@@ -453,7 +497,8 @@ elif st.session_state.page == "4. Run Classic GARP Rules":
 # -----------------------------
 elif st.session_state.page == "5. Create Probability-Based Signals":
     st.header("Create probability-based signals (not a black box)")
-    require_step(st.session_state.df_screened_rules is not None, "Please complete **Run Classic GARP Rules** first.")
+    require_step(st.session_state.df_screened_rules is not None,
+                 "Please complete **Run Classic GARP Rules** first.")
 
     st.markdown(
         "Instead of hard cutoffs, this step creates a **confidence-weighted signal**: "
@@ -467,15 +512,17 @@ elif st.session_state.page == "5. Create Probability-Based Signals":
     with st.container(border=True):
         st.markdown("#### What you get")
         st.markdown(
-            "• A **label** (Buy/Hold/Sell)\n"
-            "• A **confidence score** (probability) you can use for ranking or sizing\n"
-            "• A simple explanation of **what tends to drive Buy vs Sell**"
+            "\n• A **label** (Buy/Hold/Sell)\n"
+            "\n• A **confidence score** (probability) you can use for ranking or sizing\n"
+            "\n• A simple explanation of **what tends to drive Buy vs Sell**"
         )
 
     if st.session_state.mode == "20-minute mastery":
-        st.caption("Mastery mode: we keep more details visible so you can build intuition.")
+        st.caption(
+            "Mastery mode: we keep more details visible so you can build intuition.")
     else:
-        st.caption("Decision-first mode: we keep the focus on outputs you can use.")
+        st.caption(
+            "Decision-first mode: we keep the focus on outputs you can use.")
 
     if st.button("Create probability-based signals"):
         with st.spinner("Training a simple probability model and generating out-of-sample predictions..."):
@@ -484,9 +531,11 @@ elif st.session_state.page == "5. Create Probability-Based Signals":
             # One-hot encode sector (if present)
             if "sector" not in df_ml.columns:
                 df_ml["sector"] = "Unknown"
-            df_ml = pd.get_dummies(df_ml, columns=["sector"], drop_first=True, dtype=int)
+            df_ml = pd.get_dummies(
+                df_ml, columns=["sector"], drop_first=True, dtype=int)
 
-            feature_cols = [c for c in df_ml.columns if c not in ["ticker", "forward_return", "target", "signal_rules"]]
+            feature_cols = [c for c in df_ml.columns if c not in [
+                "ticker", "forward_return", "target", "signal_rules"]]
             X = df_ml[feature_cols]
             y = df_ml["target"]
 
@@ -508,20 +557,25 @@ elif st.session_state.page == "5. Create Probability-Based Signals":
             st.session_state.X_train_sc = X_train_sc
             st.session_state.X_test_sc = X_test_sc
 
-            st.session_state.df_test_metadata = df_ml.loc[X_test.index, ["ticker", "forward_return", "target", "signal_rules"]].copy()
+            st.session_state.df_test_metadata = df_ml.loc[X_test.index, [
+                "ticker", "forward_return", "target", "signal_rules"]].copy()
 
             # Hyperparameter selection (kept behind the scenes; outcome is what matters)
             param_grid = {"C": [0.01, 0.1, 1.0, 10.0, 100.0]}
-            base = LogisticRegression(penalty="l2", solver="lbfgs", max_iter=1000, random_state=42)
-            gs = GridSearchCV(base, param_grid=param_grid, cv=5, scoring="f1_weighted", n_jobs=-1, verbose=0)
+            base = LogisticRegression(
+                penalty="l2", solver="lbfgs", max_iter=1000, random_state=42)
+            gs = GridSearchCV(base, param_grid=param_grid, cv=5,
+                              scoring="f1_weighted", n_jobs=-1, verbose=0)
             gs.fit(X_train_sc, y_train)
 
-            ml_model = LogisticRegression(C=gs.best_params_["C"], penalty="l2", solver="lbfgs", max_iter=1000, random_state=42)
+            ml_model = LogisticRegression(C=gs.best_params_[
+                                          "C"], penalty="l2", solver="lbfgs", max_iter=1000, random_state=42)
             ml_model.fit(X_train_sc, y_train)
             st.session_state.ml_model = ml_model
 
             y_pred_encoded = ml_model.predict(X_test_sc)
-            st.session_state.y_pred_ml_proba = ml_model.predict_proba(X_test_sc)
+            st.session_state.y_pred_ml_proba = ml_model.predict_proba(
+                X_test_sc)
 
             st.session_state.y_pred_ml = le.inverse_transform(y_pred_encoded)
             st.session_state.y_test_decoded = le.inverse_transform(y_test)
@@ -540,23 +594,28 @@ elif st.session_state.page == "5. Create Probability-Based Signals":
         df_test["ml_buy_proba"] = st.session_state.y_pred_ml_proba[:, buy_idx]
 
         # Apply confidence threshold for “actionable buys”
-        df_test["ml_actionable_buy"] = np.where(df_test["ml_buy_proba"] >= st.session_state.confidence_threshold, "Actionable Buy", "Not actionable")
+        df_test["ml_actionable_buy"] = np.where(
+            df_test["ml_buy_proba"] >= st.session_state.confidence_threshold, "Actionable Buy", "Not actionable")
 
         c1, c2 = st.columns([1, 2])
         with c1:
             st.markdown("#### Actionable buys (by your confidence threshold)")
-            st.dataframe(df_test["ml_actionable_buy"].value_counts().rename_axis("Bucket").reset_index(name="Count"), use_container_width=True)
-            st.caption("Use this as a shortlist filter: higher threshold = fewer, higher-conviction candidates.")
+            st.dataframe(df_test["ml_actionable_buy"].value_counts().rename_axis(
+                "Bucket").reset_index(name="Count"), use_container_width=True)
+            st.caption(
+                "Use this as a shortlist filter: higher threshold = fewer, higher-conviction candidates.")
         with c2:
             st.markdown("#### Top candidates by Buy probability")
             top = df_test.sort_values("ml_buy_proba", ascending=False).head(15)[
-                ["ticker", "ml_buy_proba", "ml_pred_class", "ml_actionable_buy", "signal_rules", "target", "forward_return"]
+                ["ticker", "ml_buy_proba", "ml_pred_class", "ml_actionable_buy",
+                    "signal_rules", "target", "forward_return"]
             ]
             st.dataframe(top, use_container_width=True)
 
         checkpoint(
             "A probability score is most useful when you…",
-            ["Treat it as an oracle and trade it blindly", "Use it to rank and set conviction thresholds", "Ignore it and rely only on cutoffs"],
+            ["Treat it as an oracle and trade it blindly",
+                "Use it to rank and set conviction thresholds", "Ignore it and rely only on cutoffs"],
             correct_index=1,
             explanation=(
                 "Probability scores are best as **ranking/conviction tools**: you can shortlist, size, or require a confidence bar."
@@ -571,7 +630,8 @@ elif st.session_state.page == "5. Create Probability-Based Signals":
 # -----------------------------
 elif st.session_state.page == "6. Compare Economic Usefulness":
     st.header("Compare economic usefulness (what matters to a PM)")
-    require_step(st.session_state.ml_model is not None, "Please complete **Create Probability-Based Signals** first.")
+    require_step(st.session_state.ml_model is not None,
+                 "Please complete **Create Probability-Based Signals** first.")
 
     metric_hierarchy_box()
 
@@ -591,25 +651,32 @@ elif st.session_state.page == "6. Compare Economic Usefulness":
         df_test["ml_buy_proba"] = st.session_state.y_pred_ml_proba[:, buy_idx]
 
         # IC (rank correlation)
-        ic_ml, _ = spearmanr(df_test["ml_buy_proba"], df_test["forward_return"])
+        ic_ml, _ = spearmanr(
+            df_test["ml_buy_proba"], df_test["forward_return"])
         st.session_state.ic_ml = float(ic_ml) if ic_ml is not None else np.nan
 
         # Spread
-        buy_rules = df_test.loc[df_test["signal_rules"] == "Buy", "forward_return"]
-        sell_rules = df_test.loc[df_test["signal_rules"] == "Sell", "forward_return"]
+        buy_rules = df_test.loc[df_test["signal_rules"]
+                                == "Buy", "forward_return"]
+        sell_rules = df_test.loc[df_test["signal_rules"]
+                                 == "Sell", "forward_return"]
         spread_rules = safe_mean(buy_rules) - safe_mean(sell_rules)
         st.session_state.spread_rules = spread_rules
 
-        buy_ml = df_test.loc[df_test["ml_pred_class"] == "Buy", "forward_return"]
-        sell_ml = df_test.loc[df_test["ml_pred_class"] == "Sell", "forward_return"]
+        buy_ml = df_test.loc[df_test["ml_pred_class"]
+                             == "Buy", "forward_return"]
+        sell_ml = df_test.loc[df_test["ml_pred_class"]
+                              == "Sell", "forward_return"]
         spread_ml = safe_mean(buy_ml) - safe_mean(sell_ml)
         st.session_state.spread_ml = spread_ml
 
         # Summary metrics
         acc_rules = accuracy_score(y_true, df_test["signal_rules"])
-        f1_rules = f1_score(y_true, df_test["signal_rules"], average="weighted", zero_division=0)
+        f1_rules = f1_score(
+            y_true, df_test["signal_rules"], average="weighted", zero_division=0)
         acc_ml = accuracy_score(y_true, y_pred_ml)
-        f1_ml = f1_score(y_true, y_pred_ml, average="weighted", zero_division=0)
+        f1_ml = f1_score(y_true, y_pred_ml,
+                         average="weighted", zero_division=0)
 
         metrics_df = pd.DataFrame({
             "Metric": ["Spread (Buy–Sell)", "IC (ranking)", "Accuracy", "F1 (weighted)"],
@@ -628,10 +695,10 @@ elif st.session_state.page == "6. Compare Economic Usefulness":
         # Guardrails
         with st.expander("Guardrails to prevent misinterpretation", expanded=True):
             st.markdown(
-                "• Always display **counts** in Buy/Sell buckets (small samples can exaggerate Spread).\n"
-                "• Treat **IC and Spread as noisy**: one split is not proof of persistence.\n"
-                "• If accuracy improves but Spread doesn’t, treat the model as **diagnostic**, not investable.\n"
-                "• Remember: these results ignore costs, constraints, and risk model effects."
+                "\n• Always display **counts** in Buy/Sell buckets (small samples can exaggerate Spread).\n"
+                "\n• Treat **IC and Spread as noisy**: one split is not proof of persistence.\n"
+                "\n• If accuracy improves but Spread doesn’t, treat the model as **diagnostic**, not investable.\n"
+                "\n• Remember: these results ignore costs, constraints, and risk model effects."
             )
 
         # Visual: boxplots (high value)
@@ -640,11 +707,13 @@ elif st.session_state.page == "6. Compare Economic Usefulness":
         df_test["ml_pred_class"] = st.session_state.y_pred_ml
 
         fig_box, axes = plt.subplots(1, 2, figsize=(14, 5), sharey=True)
-        sns.boxplot(x="signal_rules", y="forward_return", data=df_test, ax=axes[0])
+        sns.boxplot(x="signal_rules", y="forward_return",
+                    data=df_test, ax=axes[0])
         axes[0].set_title("Forward returns by Rules signal")
         axes[0].axhline(y=0, color="gray", linestyle="--", alpha=0.5)
 
-        sns.boxplot(x="ml_pred_class", y="forward_return", data=df_test, ax=axes[1])
+        sns.boxplot(x="ml_pred_class", y="forward_return",
+                    data=df_test, ax=axes[1])
         axes[1].set_title("Forward returns by Probability-based signal")
         axes[1].axhline(y=0, color="gray", linestyle="--", alpha=0.5)
 
@@ -656,26 +725,35 @@ elif st.session_state.page == "6. Compare Economic Usefulness":
             st.subheader("Diagnostics (optional)")
 
             # Classification tables
-            st.markdown("#### Operational reliability (precision/recall by class)")
-            rules_rep = classification_report(y_true, df_test["signal_rules"], output_dict=True, zero_division=0)
-            ml_rep = classification_report(y_true, st.session_state.y_pred_ml, output_dict=True, zero_division=0)
+            st.markdown(
+                "#### Operational reliability (precision/recall by class)")
+            rules_rep = classification_report(
+                y_true, df_test["signal_rules"], output_dict=True, zero_division=0)
+            ml_rep = classification_report(
+                y_true, st.session_state.y_pred_ml, output_dict=True, zero_division=0)
             c1, c2 = st.columns(2)
             with c1:
                 st.markdown("**Rules**")
-                st.dataframe(pd.DataFrame(rules_rep).transpose(), use_container_width=True)
+                st.dataframe(pd.DataFrame(rules_rep).transpose(),
+                             use_container_width=True)
             with c2:
                 st.markdown("**Probability-based**")
-                st.dataframe(pd.DataFrame(ml_rep).transpose(), use_container_width=True)
+                st.dataframe(pd.DataFrame(ml_rep).transpose(),
+                             use_container_width=True)
 
             # Confusion matrices
             st.markdown("#### Where mistakes happen (confusion matrices)")
             fig_cm, axes_cm = plt.subplots(1, 2, figsize=(14, 5))
-            cm_rules = confusion_matrix(y_true, df_test["signal_rules"], labels=st.session_state.target_names)
-            sns.heatmap(cm_rules, annot=True, fmt="d", xticklabels=st.session_state.target_names, yticklabels=st.session_state.target_names, ax=axes_cm[0])
+            cm_rules = confusion_matrix(
+                y_true, df_test["signal_rules"], labels=st.session_state.target_names)
+            sns.heatmap(cm_rules, annot=True, fmt="d", xticklabels=st.session_state.target_names,
+                        yticklabels=st.session_state.target_names, ax=axes_cm[0])
             axes_cm[0].set_title("Rules confusion matrix")
 
-            cm_ml = confusion_matrix(y_true, st.session_state.y_pred_ml, labels=st.session_state.target_names)
-            sns.heatmap(cm_ml, annot=True, fmt="d", xticklabels=st.session_state.target_names, yticklabels=st.session_state.target_names, ax=axes_cm[1])
+            cm_ml = confusion_matrix(
+                y_true, st.session_state.y_pred_ml, labels=st.session_state.target_names)
+            sns.heatmap(cm_ml, annot=True, fmt="d", xticklabels=st.session_state.target_names,
+                        yticklabels=st.session_state.target_names, ax=axes_cm[1])
             axes_cm[1].set_title("Probability-based confusion matrix")
 
             st.pyplot(fig_cm)
@@ -701,7 +779,8 @@ elif st.session_state.page == "6. Compare Economic Usefulness":
 # -----------------------------
 elif st.session_state.page == "7. Explain Drivers & Discuss":
     st.header("Explain drivers (build trust without black-boxing)")
-    require_step(st.session_state.ml_model is not None, "Please complete **Compare Economic Usefulness** first (or at least train the model).")
+    require_step(st.session_state.ml_model is not None,
+                 "Please complete **Compare Economic Usefulness** first (or at least train the model).")
 
     st.markdown(
         "This section translates the model into **factor intuition**: what tends to push a stock toward ‘Buy’ vs away from it."
@@ -719,10 +798,13 @@ elif st.session_state.page == "7. Explain Drivers & Discuss":
         df_tmp = st.session_state.df_screened_rules.copy()
         if "sector" not in df_tmp.columns:
             df_tmp["sector"] = "Unknown"
-        df_tmp = pd.get_dummies(df_tmp, columns=["sector"], drop_first=True, dtype=int)
-        feature_cols = [c for c in df_tmp.columns if c not in ["ticker", "forward_return", "target", "signal_rules"]]
+        df_tmp = pd.get_dummies(
+            df_tmp, columns=["sector"], drop_first=True, dtype=int)
+        feature_cols = [c for c in df_tmp.columns if c not in [
+            "ticker", "forward_return", "target", "signal_rules"]]
 
-        coefs = pd.DataFrame(ml_model.coef_, columns=feature_cols, index=target_names)
+        coefs = pd.DataFrame(
+            ml_model.coef_, columns=feature_cols, index=target_names)
         st.session_state.coefficients = coefs
 
         # Committee-ready summaries
@@ -738,12 +820,12 @@ elif st.session_state.page == "7. Explain Drivers & Discuss":
         with c1:
             info_card(
                 "Top drivers *toward* Buy (associations)",
-                "\n".join([f"• **{k}**" for k in top_pos.index])
+                "\n".join([f"\n• **{k}**" for k in top_pos.index])
             )
         with c2:
             info_card(
                 "Top drivers *against* Buy (associations)",
-                "\n".join([f"• **{k}**" for k in top_neg.index])
+                "\n".join([f"\n• **{k}**" for k in top_neg.index])
             )
 
         st.warning(
