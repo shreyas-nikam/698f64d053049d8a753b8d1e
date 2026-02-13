@@ -302,7 +302,7 @@ elif st.session_state.page == '4. Machine Learning Model Training':
                 # Hyperparameter Tuning
                 param_grid = {'C': [0.01, 0.1, 1.0, 10.0, 100.0]}
                 lr_model = LogisticRegression(
-                    penalty='l2', multi_class='multinomial', solver='lbfgs', max_iter=1000, random_state=42
+                    penalty='l2', solver='lbfgs', max_iter=1000, random_state=42
                 )
                 grid_search = GridSearchCV(
                     estimator=lr_model, param_grid=param_grid, cv=5, scoring='f1_weighted', n_jobs=-1, verbose=0
@@ -313,7 +313,7 @@ elif st.session_state.page == '4. Machine Learning Model Training':
 
                 # Train final model
                 ml_model = LogisticRegression(
-                    C=best_C, penalty='l2', multi_class='multinomial', solver='lbfgs', max_iter=1000, random_state=42
+                    C=best_C, penalty='l2', solver='lbfgs', max_iter=1000, random_state=42
                 )
                 ml_model.fit(X_train_sc, y_train)
                 st.session_state.ml_model = ml_model
@@ -362,14 +362,31 @@ elif st.session_state.page == '5. Comparative Performance Evaluation':
             signal_map = {name: le.transform([name])[0] for name in target_names}
             df_test_metadata['signal_rules_encoded'] = df_test_metadata['signal_rules'].map(signal_map).fillna(le.transform(['Hold'])[0])
 
-            st.subheader("--- Comparison of Stock Screening Approaches ---")
+            st.subheader("Comparison of Stock Screening Approaches")
 
             # Classification reports
-            st.markdown("\n=== Rules-Based Screen Evaluation ===")
-            st.text(classification_report(st.session_state.y_test_decoded, df_test_metadata['signal_rules'], target_names=target_names, zero_division=0))
-
-            st.markdown("\n=== ML (Logistic Regression) Evaluation ===")
-            st.text(classification_report(st.session_state.y_test_decoded, st.session_state.y_pred_ml, target_names=target_names, zero_division=0))
+            st.markdown("### Classification Performance Metrics")
+            
+            # Generate classification reports as dictionaries
+            rules_report = classification_report(st.session_state.y_test_decoded, df_test_metadata['signal_rules'], 
+                                                 target_names=target_names, zero_division=0, output_dict=True)
+            ml_report = classification_report(st.session_state.y_test_decoded, st.session_state.y_pred_ml, 
+                                              target_names=target_names, zero_division=0, output_dict=True)
+            
+            # Convert to DataFrames for better display
+            rules_df = pd.DataFrame(rules_report).transpose()
+            ml_df = pd.DataFrame(ml_report).transpose()
+            
+            # Display in two columns
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("#### Rules-Based Screen Evaluation")
+                st.dataframe(rules_df.style.format("{:.3f}").background_gradient(cmap='Blues', subset=['precision', 'recall', 'f1-score']))
+            
+            with col2:
+                st.markdown("#### ML (Logistic Regression) Evaluation")
+                st.dataframe(ml_df.style.format("{:.3f}").background_gradient(cmap='Greens', subset=['precision', 'recall', 'f1-score']))
 
             # Confusion Matrices
             st.subheader("Confusion Matrices:")
@@ -467,9 +484,9 @@ elif st.session_state.page == '6. Interpretation & Discussion':
             intercepts = pd.Series(ml_model.intercept_, index=target_names, name='Intercept')
             st.session_state.coefficients = coefficients
 
-            st.markdown("\n--- Logistic Regression Coefficients per Class ---")
+            st.markdown("\n Logistic Regression Coefficients per Class ")
             st.dataframe(coefficients)
-            st.markdown("\n--- Logistic Regression Intercepts per Class ---")
+            st.markdown("\n Logistic Regression Intercepts per Class ")
             st.dataframe(intercepts)
 
             st.subheader(f'Logistic Regression Coefficients for "Buy" Class')

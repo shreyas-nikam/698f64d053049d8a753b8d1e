@@ -20,6 +20,8 @@ import seaborn as sns
 from scipy.stats import spearmanr
 import warnings
 import os
+from pytickersymbols import PyTickerSymbols
+
 
 def setup_environment():
     """Suppresses warnings for cleaner output."""
@@ -30,18 +32,32 @@ def setup_environment():
 def fetch_sp500_tickers():
     """Fetches current S&P 500 tickers from Wikipedia."""
     try:
-        sp500_table = pd.read_html('https://en.wikipedia.org/wiki/List_of_S%26P 500_companies')[0]
-        tickers = sp500_table['Symbol'].tolist()
-        return tickers
+       
+        symbols = PyTickerSymbols()
+        sp500_info = symbols.get_stocks_by_index("S&P 500")
+
+        sp500_tickers = [item["symbol"] for item in sp500_info]
+        return sp500_tickers
     except Exception as e:
         print(f"Error fetching S&P 500 tickers: {e}. Using a fallback list.")
-        return ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'TSLA', 'JPM', 'JNJ', 'XOM', 'NVDA', 'V'] # Fallback list
+        return ['MMM', 'AOS', 'ABT', 'ABBV', 'ACN', 'ADBE', 'AMD', 'AES', 'AFL', 'A', 'APD', 'ABNB', 'AKAM', 'ALB', 'ARE', 'ALGN', 'ALLE', 'LNT', 'ALL', 'GOOGL', 'GOOG', 'MO', 'AMZN', 'AMCR', 'AEE', 'AEP', 'AXP', 'AIG', 'AMT', 'AWK', 'AMP', 'AME', 'AMGN', 'APH', 'ADI', 'AON', 'APA', 'APO', 'AAPL', 'AMAT', 'APP', 'APTV', 'ACGL', 'ADM', 'ARES', 'ANET', 'AJG', 'AIZ', 'T', 'ATO', 'ADSK', 'ADP', 'AZO', 'AVB', 'AVY', 'AXON', 'BKR', 'BALL', 'BAC', 'BAX', 'BDX', 'BRK.B', 'BBY', 'TECH', 'BIIB', 'BLK', 'BX', 'XYZ', 'BK', 'BA', 'BKNG', 'BSX', 'BMY', 'AVGO', 'BR', 'BRO', 'BF.B', 'BLDR', 'BG', 'BXP', 'CHRW', 'CDNS', 'CPT', 'CPB', 'COF', 'CAH', 'CCL', 'CARR', 'CVNA', 'CAT', 'CBOE', 'CBRE', 'CDW', 'COR', 'CNC', 'CNP', 'CF', 'CRL', 'SCHW', 'CHTR', 'CVX', 'CMG', 'CB', 'CHD', 'CI', 'CINF', 'CTAS', 'CSCO', 'C', 'CFG', 'CLX', 'CME', 'CMS', 'KO', 'CTSH', 'COIN', 'CL', 'CMCSA', 'FIX', 'CAG', 'COP', 'ED', 'STZ', 'CEG', 'COO', 'CPRT', 'GLW', 'CPAY', 'CTVA', 'CSGP', 'COST', 'CTRA', 'CRH', 'CRWD', 'CCI', 'CSX', 'CMI', 'CVS', 'DHR', 'DRI', 'DDOG', 'DVA', 'DAY', 'DECK', 'DE', 'DELL', 'DAL', 'DVN', 'DXCM', 'FANG', 'DLR', 'DG', 'DLTR', 'D', 'DPZ', 'DASH', 'DOV', 'DOW', 'DHI', 'DTE', 'DUK', 'DD', 'ETN', 'EBAY', 'ECL', 'EIX', 'EW', 'EA', 'ELV', 'EME', 'EMR', 'ETR', 'EOG', 'EPAM', 'EQT', 'EFX', 'EQIX', 'EQR', 'ERIE', 'ESS', 'EL', 'EG', 'EVRG', 'ES', 'EXC', 'EXE', 'EXPE', 'EXPD', 'EXR', 'XOM', 'FFIV', 'FDS', 'FICO', 'FAST', 'FRT', 'FDX', 'FIS', 'FITB', 'FSLR', 'FE', 'FISV', 'F', 'FTNT', 'FTV', 'FOXA', 'FOX', 'BEN', 'FCX', 'GRMN', 'IT', 'GE', 'GEHC', 'GEV', 'GEN', 'GNRC', 'GD', 'GIS', 'GM', 'GPC', 'GILD', 'GPN', 'GL', 'GDDY', 'GS', 'HAL', 'HIG', 'HAS', 'HCA', 'DOC', 'HSIC', 'HSY', 'HPE', 'HLT', 'HOLX', 'HD', 'HON', 'HRL', 'HST', 'HWM', 'HPQ', 'HUBB', 'HUM', 'HBAN', 'HII', 'IBM', 'IEX', 'IDXX', 'ITW', 'INCY', 'IR', 'PODD', 'INTC', 'IBKR', 'ICE', 'IFF', 'IP', 'INTU', 'ISRG', 'IVZ', 'INVH', 'IQV', 'IRM', 'JBHT', 'JBL', 'JKHY', 'J', 'JNJ', 'JCI', 'JPM', 'KVUE', 'KDP', 'KEY', 'KEYS', 'KMB', 'KIM', 'KMI', 'KKR', 'KLAC', 'KHC', 'KR', 'LHX', 'LH', 'LRCX', 'LW', 'LVS', 'LDOS', 'LEN', 'LII', 'LLY', 'LIN', 'LYV', 'LMT', 'L', 'LOW', 'LULU', 'LYB', 'MTB', 'MPC', 'MAR', 'MRSH', 'MLM', 'MAS', 'MA', 'MTCH', 'MKC', 'MCD', 'MCK', 'MDT', 'MRK', 'META', 'MET', 'MTD', 'MGM', 'MCHP', 'MU', 'MSFT', 'MAA', 'MRNA', 'MOH', 'TAP', 'MDLZ', 'MPWR', 'MNST', 'MCO', 'MS', 'MOS', 'MSI', 'MSCI', 'NDAQ', 'NTAP', 'NFLX', 'NEM', 'NWSA', 'NWS', 'NEE', 'NKE', 'NI', 'NDSN', 'NSC', 'NTRS', 'NOC', 'NCLH', 'NRG', 'NUE', 'NVDA', 'NVR', 'NXPI', 'ORLY', 'OXY', 'ODFL', 'OMC', 'ON', 'OKE', 'ORCL', 'OTIS', 'PCAR', 'PKG', 'PLTR', 'PANW', 'PSKY', 'PH', 'PAYX', 'PAYC', 'PYPL', 'PNR', 'PEP', 'PFE', 'PCG', 'PM', 'PSX', 'PNW', 'PNC', 'POOL', 'PPG', 'PPL', 'PFG', 'PG', 'PGR', 'PLD', 'PRU', 'PEG', 'PTC', 'PSA', 'PHM', 'PWR', 'QCOM', 'DGX', 'Q', 'RL', 'RJF', 'RTX', 'O', 'REG', 'REGN', 'RF', 'RSG', 'RMD', 'RVTY', 'HOOD', 'ROK', 'ROL', 'ROP', 'ROST', 'RCL', 'SPGI', 'CRM', 'SNDK', 'SBAC', 'SLB', 'STX', 'SRE', 'NOW', 'SHW', 'SPG', 'SWKS', 'SJM', 'SW', 'SNA', 'SOLV', 'SO', 'LUV', 'SWK', 'SBUX', 'STT', 'STLD', 'STE', 'SYK', 'SMCI', 'SYF', 'SNPS', 'SYY', 'TMUS', 'TROW', 'TTWO', 'TPR', 'TRGP', 'TGT', 'TEL', 'TDY', 'TER', 'TSLA', 'TXN', 'TPL', 'TXT', 'TMO', 'TJX', 'TKO', 'TTD', 'TSCO', 'TT', 'TDG', 'TRV', 'TRMB', 'TFC', 'TYL', 'TSN', 'USB', 'UBER', 'UDR', 'ULTA', 'UNP', 'UAL', 'UPS', 'URI', 'UNH', 'UHS', 'VLO', 'VTR', 'VLTO', 'VRSN', 'VRSK', 'VZ', 'VRTX', 'VTRS', 'VICI', 'V', 'VST', 'VMC', 'WRB', 'GWW', 'WAB', 'WMT', 'DIS', 'WBD', 'WM', 'WAT', 'WEC', 'WFC', 'WELL', 'WST', 'WDC', 'WY', 'WSM', 'WMB', 'WTW', 'WDAY', 'WYNN', 'XEL', 'XYL', 'YUM', 'ZBRA', 'ZBH', 'ZTS']
 
-def fetch_financial_data(tickers, start_date, end_date, synthetic_csv_path='synthetic_sp500_data.csv'):
+def fetch_financial_data(tickers, start_date, end_date, synthetic_csv_path='synthetic_sp500_data.csv', cached_data_path='fetched_sp500_data.csv'):
     """
     Fetches fundamental financial data and calculates 12-month forward returns.
     Includes a synthetic CSV fallback if yfinance fails or too few stocks are fetched.
+    Caches fetched data to avoid repeated API calls.
     """
+    # First, check if we have cached data from a previous fetch
+    if os.path.exists(cached_data_path):
+        print(f"Loading cached data from '{cached_data_path}'...")
+        try:
+            df_cached = pd.read_csv(cached_data_path)
+            print(f"Successfully loaded {len(df_cached)} stocks from cache.")
+            return df_cached
+        except Exception as e:
+            print(f"Error loading cached data: {e}. Fetching fresh data...")
+    
     data_list = []
 
     feature_map = {
@@ -72,7 +88,11 @@ def fetch_financial_data(tickers, start_date, end_date, synthetic_csv_path='synt
                 else:
                     row[df_col] = val
 
-            hist_prices = stock.history(start=start_date, end=end_date)['Adj Close']
+            hist = stock.history(start=start_date, end=end_date)
+            if hist.empty or 'Close' not in hist.columns:
+                continue
+            
+            hist_prices = hist['Close']
 
             if len(hist_prices) > 252:
                 row['forward_return'] = np.random.uniform(-0.30, 0.50) # Synthetic for demonstration
@@ -82,6 +102,16 @@ def fetch_financial_data(tickers, start_date, end_date, synthetic_csv_path='synt
         except Exception as e:
             # print(f"Could not fetch data for {ticker}: {e}") # Suppress verbose ticker errors
             continue
+    
+    # If we successfully fetched data, save it to cache for future use
+    if fetched_any and len(data_list) >= 50:
+        df_fetched = pd.DataFrame(data_list)
+        try:
+            df_fetched.to_csv(cached_data_path, index=False)
+            print(f"Cached {len(df_fetched)} stocks to '{cached_data_path}' for future use.")
+        except Exception as e:
+            print(f"Warning: Could not save cache file: {e}")
+        return df_fetched
 
     if not fetched_any or len(data_list) < 50:
         print("Live data fetch was insufficient or failed. Attempting to load synthetic dataset...")
