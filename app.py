@@ -756,8 +756,8 @@ elif st.session_state.page == '6. Interpretation & Discussion':
 
             st.caption("Interpretation: features were standardized; a coefficient reflects the impact of a **1 standard-deviation increase** in that factor.")
             # show_odds = st.checkbox("Show odds ratios (exp(coefficient))", value=False, help="Odds ratios translate log-odds into multiplicative changes in odds per 1-SD move.")
-            if show_odds:
-                st.dataframe(np.exp(coefficients).replace([np.inf, -np.inf], np.nan))
+            # if show_odds:
+            #     st.dataframe(np.exp(coefficients).replace([np.inf, -np.inf], np.nan))
             st.markdown("\n Logistic Regression Intercepts per Class ")
             st.dataframe(intercepts)
 
